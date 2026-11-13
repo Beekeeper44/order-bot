@@ -16,6 +16,7 @@ export default async function handler(req, res) {
   // Columns it should return: PO_ID, PO_NUMBER, STATUS, CREATED_AT, ITEM_CATEGORY (optional), ORDER_COUNT (optional).
   // Metabase question 47554 "ORDER-BOT PO Lookup" (one row per order on the PO).
   const qid = env("PO_QUESTION_ID", "47554");
+  let qErr = "";
   if (qid && qid !== "off") {
     try {
       const r = await savedQuestion(qid, "po_number", Number(n));
@@ -42,7 +43,7 @@ export default async function handler(req, res) {
         details: Object.entries(po).filter(([k, v]) => !skip.test(k) && v != null && v !== "" && typeof v !== "object").slice(0, 14),
       });
     } catch (e) {
-      return send(res, 502, { error: "Couldn't run Metabase question " + qid + ": " + e.message });
+      qErr = "Question " + qid + ": " + e.message;   // fall back to querying the table directly
     }
   }
 
@@ -58,7 +59,7 @@ export default async function handler(req, res) {
       break;
     } catch (e) { lastErr = e; }
   }
-  if (!rows) return send(res, 502, { error: "Couldn't search purchase orders: " + (lastErr?.message || "unknown error") });
+  if (!rows) return send(res, 502, { error: (qErr ? qErr + " · " : "") + "Direct lookup: " + (lastErr?.message || "unknown error") });
   if (!rows.length) return send(res, 404, { error: `No purchase order #${n}.` });
 
   const po = rows[0];
