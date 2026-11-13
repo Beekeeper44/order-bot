@@ -31,13 +31,14 @@ export default async function handler(req, res) {
         cost: x.order_purchase_cost ?? null,
         loc: x.purchase_location ?? x.order_purchase_location ?? null,
       }));
-      const skip = /^(po_id|id|po_number|number|item_category|category|status|po_status|created_at|order_count|po_line_details|order_.*|quantity|purchase_location)$/;
+      const skip = /^(po_id|id|po_number|number|item_category|category|status|po_status|created_at|order_count|po_line_details|order_.*|quantity|purchase_location|po_amount|transaction_amount_cents)$/;
       return send(res, 200, {
         id: String(po.po_id ?? po.id ?? ""),
         number: n,
         category: po.item_category ?? po.category ?? null,
         status: po.po_status ?? po.status ?? null,
         createdAt: po.created_at ?? po.po_order_date ?? null,
+        amount: po.po_amount != null ? Number(po.po_amount) : po.transaction_amount_cents != null ? Number(po.transaction_amount_cents) / 100 : null,
         orderCount: po.order_count != null ? Number(po.order_count) : orders.length,
         orders,
         details: Object.entries(po).filter(([k, v]) => !skip.test(k) && v != null && v !== "" && typeof v !== "object").slice(0, 14),
@@ -86,6 +87,7 @@ export default async function handler(req, res) {
     category: pick("item_category", "category"),
     status: pick("status"),
     createdAt: pick("created_at"),
+    amount: po.transaction_amount_cents != null ? Number(po.transaction_amount_cents) / 100 : null,
     orderCount,
     details,
   });

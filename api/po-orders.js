@@ -8,6 +8,7 @@ import { send } from "../lib/http.js";
 import { env } from "../lib/env.js";
 import { currentUser } from "../lib/auth.js";
 import { adminFetch } from "../lib/admin.js";
+import { ensureTables } from "../lib/db.js";
 
 const pick = (o, ...ks) => { for (const k of ks) if (o && o[k] != null && o[k] !== "") return o[k]; return null; };
 
@@ -41,6 +42,17 @@ export default async function handler(req, res) {
       createdAt: pick(o, "inboundAt", "createdAt", "created_at"),
     };
   });
+  // Who created each order through ORDER-BOT (orders made by hand in admin show no name)
+  try {
+    const db = await ensureTables();
+    const nums = orders.map((o) => o.number).filter((n) => n != null).map(String);
+    if (db && nums.length) {
+      const rows = await db`SELECT DISTINCT ON (order_number) order_number, who FROM order_bot_orders
+                            WHERE ok AND NOT dry AND order_number = ANY(${nums}) ORDER BY order_number, created_at DESC`;
+      const by = Object.fromEntries(rows.map((r) => [String(r.order_number), r.who]));
+      orders.forEach((o) => { o.by = by[String(o.number)] || null; });
+    }
+  } catch {}
   const total = j && j.totalCount != null ? Number(j.totalCount) : orders.length;
   send(res, 200, { orders, totalCount: total });
 }

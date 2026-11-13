@@ -93,6 +93,10 @@ tr.new td{background:color-mix(in srgb,var(--go) 9%,transparent)}
 .summary{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);margin-bottom:14px}
 .summary.result{border-color:var(--go)}
 .summary.partial{border-color:var(--bad)}
+.summary.dryrun{border-color:var(--warn)}
+.summary.past{opacity:.92}
+.summary h3 .when{font-weight:500;font-size:13px;color:var(--dim);margin-left:6px}
+.runshead{margin:4px 0 8px;font-size:14px;color:var(--dim)}
 .summary h3{margin:0 0 4px;font-size:15px}
 .summary .sub{color:var(--dim);font-size:12.5px;margin-bottom:10px}
 .tblwrap{overflow-x:auto}
@@ -236,6 +240,10 @@ h1{font-size:24px}
 .foot{font-size:14px}
 .pohead h2{font-size:28px}
 .pohead .id{font-size:14px}
+.pocost{margin-top:4px;font-size:16px;color:var(--text)}
+.pocost b{font-size:18px}
+.pocost span{color:var(--dim);font-size:14px}
+.pocost .over{color:var(--bad);font-weight:700}
 .pofacts{font-size:15px}
 .polist h4{font-size:15px}
 .polist table,.summary table,#runs table{font-size:15px}
@@ -684,16 +692,16 @@ body{font-size:15px}
   /* ---------- PO lookup ---------- */
   // ---- dummy data (demo mode only) ----
   const DEMO_POS = {
-    "5115": { id: "c90e4970-81af-4835-b74a-92c9b83f83de", category: "cards", status: "open", createdAt: "2026-11-10T17:12:00Z",
+    "5115": { id: "c90e4970-81af-4835-b74a-92c9b83f83de", category: "cards", status: "open", createdAt: "2026-11-10T17:12:00Z", amount: 12400,
       details: [["vendor_note", "Card show buy — Portland"], ["purchase_cost", "$12,400.00"]],
       orders: [
         { number: "21246195", status: "Inbound", type: "vault_only", qty: 100, cost: 1, loc: "PO 5115 500+ BB P1" },
         { number: "21246102", status: "Processing", type: "Grade & Vault (Raw)", qty: 250, cost: 3200, loc: "PO 5115 100-499 BK P2" },
       ] },
-    "5116": { id: "4b1f2e9a-7c3d-4e55-9a10-2f8e6d1c0b77", category: "cards", status: "open", createdAt: "2026-11-11T19:40:00Z",
+    "5116": { id: "4b1f2e9a-7c3d-4e55-9a10-2f8e6d1c0b77", category: "cards", status: "open", createdAt: "2026-11-11T19:40:00Z", amount: 1800,
       details: [["vendor_note", "Pokémon collection, mostly raw"]],
       orders: [ { number: "21247010", status: "Inbound", type: "Grade & Vault (Raw)", qty: 400, cost: 1800, loc: "PO 5116 <99 PKMN P3" } ] },
-    "5120": { id: "e7a90c14-2d6b-4f3e-b8c1-5a0d9e7f3c21", category: "cards", status: "open", createdAt: "2026-11-13T15:05:00Z",
+    "5120": { id: "e7a90c14-2d6b-4f3e-b8c1-5a0d9e7f3c21", category: "cards", status: "open", createdAt: "2026-11-13T15:05:00Z", amount: 30000,
       details: [["vendor_note", "New PO, no orders yet"]], orders: [] },
   };
   S.demoRuns = [
@@ -732,7 +740,7 @@ body{font-size:15px}
     finally { $("#poBtn").disabled = false; }
   };
   function setPo(po){
-    S.po = po; S.run = null; $("#out").innerHTML = "";
+    S.po = po; S.run = null; drawRun();
     drawPoCard();
     $("#poCard").hidden = false; $("#poPanel").hidden = true; $("#empty").hidden = true;
     resetForm(); openDrawer();
@@ -757,11 +765,19 @@ body{font-size:15px}
   }
   function poOrdersTable(list, total){
     if (!list.length) return `<div class="polist"><h4>Orders on this PO</h4><div class="dim small">No orders yet.</div></div>`;
-    const showType = list.some((o) => o.type), showIn = list.some((o) => o.createdAt), showNote = list.some((o) => o.note);
+    const showType = list.some((o) => o.type), showIn = list.some((o) => o.createdAt), showNote = list.some((o) => o.note), showBy = list.some((o) => o.by);
     const head = `Orders on this PO (${total && total > list.length ? `showing ${list.length} of ${total}` : list.length})`;
-    return `<div class="polist"><h4>${head}</h4><div class="tblwrap"><table><thead><tr><th>Order</th><th>Status</th>${showType ? "<th>Order type</th>" : ""}<th>Quantity</th><th>Purchase cost</th><th>Purchase location</th>${showNote ? "<th>Notes</th>" : ""}${showIn ? "<th>Inbound</th>" : ""}</tr></thead><tbody>${
-      list.map((o) => `<tr class="${o.isNew ? "new" : ""}"><td><b>${esc(o.number ?? "—")}</b></td><td><span class="st">${esc(o.status ? String(o.status).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—")}</span></td>${showType ? `<td>${o.type ? typeHtml(typeLabel(o.type), o.type) : `<span class="dim">—</span>`}</td>` : ""}<td>${esc(o.qty ?? "—")}</td><td>${money(o.cost)}</td><td>${esc(o.loc || "—")}</td>${showNote ? `<td style="white-space:normal">${esc(o.note || "")}</td>` : ""}${showIn ? `<td>${o.createdAt ? esc(new Date(o.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })) : "—"}</td>` : ""}</tr>`).join("")
+    return `<div class="polist"><h4>${head}</h4><div class="tblwrap"><table><thead><tr><th>Order</th><th>Status</th>${showType ? "<th>Order type</th>" : ""}<th>Quantity</th><th>Purchase cost</th><th>Purchase location</th>${showNote ? "<th>Notes</th>" : ""}${showBy ? "<th>Created by</th>" : ""}${showIn ? "<th>Inbound</th>" : ""}</tr></thead><tbody>${
+      list.map((o) => `<tr class="${o.isNew ? "new" : ""}"><td><b>${esc(o.number ?? "—")}</b></td><td><span class="st">${esc(o.status ? String(o.status).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—")}</span></td>${showType ? `<td>${o.type ? typeHtml(typeLabel(o.type), o.type) : `<span class="dim">—</span>`}</td>` : ""}<td>${esc(o.qty ?? "—")}</td><td>${money(o.cost)}</td><td>${esc(o.loc || "—")}</td>${showNote ? `<td style="white-space:normal">${esc(o.note || "")}</td>` : ""}${showBy ? `<td>${o.by ? esc(o.by) : `<span class="dim">in admin</span>`}</td>` : ""}${showIn ? `<td>${o.createdAt ? esc(new Date(o.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })) : "—"}</td>` : ""}</tr>`).join("")
     }</tbody></table></div></div>`;
+  }
+  // Total cost under the PO ID, plus how much of it the PO's orders already use
+  function poCostLine(po){
+    if (po.amount == null || isNaN(po.amount)) return "";
+    const list = (S.demo && DEMO_POS[po.number] ? DEMO_POS[po.number].orders : po.orders) || [];
+    const used = list.reduce((t, o) => t + (Number(o.cost) || 0), 0);
+    const left = po.amount - used;
+    return `<div class="pocost">Total cost <b>${money(po.amount)}</b>${list.length ? ` <span>· orders ${money(used)} · <span class="${left < 0 ? "over" : ""}">${left < 0 ? "over by " + money(-left) : money(left) + " left"}</span></span>` : ""}</div>`;
   }
   function drawPoCard(){
     const po = S.po;
@@ -773,7 +789,7 @@ body{font-size:15px}
     ].filter(Boolean);
     const more = (po.details || []).filter(([k]) => !["status","category","item_category","created_at"].includes(k));
     $("#poCard").innerHTML = `<div class="pohead">
-        <div><h2>Purchase Order #${esc(po.number)}</h2><div class="id">${po.id ? "ID " + esc(po.id) : "No PO ID returned"}</div></div>
+        <div><h2>Purchase Order #${esc(po.number)}</h2><div class="id">${po.id ? "ID " + esc(po.id) : "No PO ID returned"}</div>${poCostLine(po)}</div>
         <div class="poacts">
           <button class="btn" type="button" id="poRefresh" title="Reload this PO's orders from admin">↻ Refresh from admin</button>
           <button class="btn" type="button" id="poChange">Change PO</button>
@@ -802,7 +818,7 @@ body{font-size:15px}
   function clearPo(){
     if (S.stage === "running") return;
     closeDrawer();
-    S.po = null; S.run = null; $("#out").innerHTML = "";
+    S.po = null; S.run = null; drawRun();
     $("#poCard").hidden = true; $("#poPanel").hidden = false; $("#empty").hidden = false;
     $("#poMsg").className = "small dim"; $("#poMsg").textContent = (S.demo ? `Demo POs: ${demoList()}. ` : "") + "Orders are created on this PO.";
     $("#poNum").select(); $("#poNum").focus();
@@ -1106,7 +1122,8 @@ body{font-size:15px}
       S.stage = "confirm"; renderDrawer();
     } else if (S.stage === "confirm") {
       const f = fields(), n = qty();
-      S.run = { id: newRunId(), qty: n, fields: f, dry: isDry(), rows: Array.from({ length: n }, (_, i) => ({ seq: i + 1, status: "wait" })) };
+      S.run = { id: newRunId(), qty: n, fields: f, dry: isDry(), at: new Date(), by: (S.me && S.me.name) || (S.demo ? "demo" : ""), rows: Array.from({ length: n }, (_, i) => ({ seq: i + 1, status: "wait" })) };
+      S.runs.unshift(S.run);
       S.stage = "edit"; closeDrawer();
       runOrders(S.run.rows.map((x) => x.seq));
     }
@@ -1128,13 +1145,13 @@ body{font-size:15px}
       } catch (e) { row.status = "bad"; row.error = e.message || "Network error"; }
       drawRun();
     }
-    S.stage = "done"; lockPoCard(); drawRun();
+    S.stage = "done"; r.done = true; lockPoCard(); drawRun();
     const made = r.rows.filter((x) => x.status === "ok");
     if (S.demo) {
       const d = DEMO_POS[r.fields.po_number];
       if (d && made.length) {
         d.orders.forEach((o) => o.isNew = false);
-        made.forEach((x) => d.orders.unshift({ number: x.orderNumber, status: "Inbound", type: r.fields.order_type, qty: +r.fields.quantity, cost: +r.fields.purchase_cost, loc: r.fields.purchase_location, isNew: true }));
+        made.forEach((x) => d.orders.unshift({ number: x.orderNumber, status: "Inbound", by: r.by || "demo", type: r.fields.order_type, qty: +r.fields.quantity, cost: +r.fields.purchase_cost, loc: r.fields.purchase_location, isNew: true }));
       }
       S.demoRuns.unshift({ at: new Date().toISOString(), who: "demo", dry: r.dry, po: r.fields.po_number, order_type: r.fields.order_type, quantity: r.fields.quantity, location: r.fields.purchase_location,
         ok: r.rows.filter((x) => x.status === "ok" || x.status === "dry").length, qty: r.qty, failed: r.rows.filter((x) => x.status === "bad").length, orders: made.map((x) => x.orderNumber) });
@@ -1155,36 +1172,47 @@ body{font-size:15px}
     if (!res.ok && !("ok" in j)) return { ok: false, error: j.error || `Error ${res.status}` };
     return j;
   }
-  function drawRun(){
-    const r = S.run; if (!r) return;
+  // Every run this session stays on the page (newest first) — a new run or dry run never replaces older ones.
+  S.runs = [];
+  function runCard(r){
     const finished = r.rows.filter((x) => ["ok","dry","bad"].includes(x.status)).length;
     const okN = r.rows.filter((x) => x.status === "ok" || x.status === "dry").length;
     const bad = r.rows.filter((x) => x.status === "bad").length;
     const nums = r.rows.filter((x) => x.orderNumber).map((x) => x.orderNumber);
-    const done = S.stage === "done";
+    const live = r === S.run, done = !!r.done;
     const label = { wait: "Waiting", run: "Creating", ok: "Created", dry: "Dry run", bad: "Failed" };
     const rows = r.rows.map((x) => `<tr><td class="num">${x.seq}</td>
         <td><span class="st ${x.status === "ok" ? "ok" : x.status === "dry" ? "dry" : x.status === "bad" ? "bad" : x.status === "run" ? "run" : ""}">${label[x.status]}</span></td>
         <td>${x.orderNumber ? `<b>${esc(x.orderNumber)}</b><button class="copy" type="button" data-copy="${esc(x.orderNumber)}" aria-label="Copy order ${esc(x.orderNumber)}">⧉</button>` : `<span class="dim">—</span>`}</td>
+        <td>${x.status === "ok" ? esc(r.by || "—") : `<span class="dim">${x.status === "dry" ? "dry run" : "—"}</span>`}</td>
         <td style="white-space:normal;color:var(--bad)">${esc(x.error || "")}</td></tr>`).join("");
     const title = !done ? `Creating ${finished} of ${r.qty}…` : r.dry ? `Dry run: ${okN} of ${r.qty} checked` : bad ? `${okN} created · ${bad} failed` : `${okN} order${okN===1?"":"s"} created`;
-    $("#out").innerHTML = `<div class="summary ${done ? (bad ? "partial" : "result") : ""}">
-      <h3>${title}</h3>
-      <div class="sub">PO #${esc(r.fields.po_number)} · ${esc(r.fields.order_type)} · ${esc(r.fields.quantity)} ${unit()} each · ${money(r.fields.purchase_cost)} each · ${esc(r.fields.purchase_location)}</div>
-      <div class="prog" aria-hidden="true"><i style="width:${Math.round(finished / r.qty * 100)}%"></i></div>
-      <div class="tblwrap"><table><thead><tr><th>#</th><th>Status</th><th>Order number</th><th>Error</th></tr></thead><tbody>${rows}</tbody></table></div>
+    const at = r.at ? r.at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : "";
+    return `<div class="summary ${done ? (bad ? "partial" : r.dry ? "dryrun" : "result") : ""}${live ? "" : " past"}" data-run="${esc(r.id)}">
+      <h3>${title} <span class="when">${esc(at)}${r.by ? " · " + esc(r.by) : ""}</span></h3>
+      <div class="sub">PO #${esc(r.fields.po_number)} · ${esc(r.fields.order_type)} · ${esc(r.fields.quantity)} ${unit()} each · ${money(r.fields.purchase_cost)} each · ${esc(r.fields.purchase_location)}${r.fields.notes ? " · note: " + esc(r.fields.notes) : ""}</div>
+      ${done ? "" : `<div class="prog" aria-hidden="true"><i style="width:${Math.round(finished / r.qty * 100)}%"></i></div>`}
+      <div class="tblwrap"><table><thead><tr><th>#</th><th>Status</th><th>Order number</th><th>Created by</th><th>Error</th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="ract">
-        ${!done ? `<button class="btn" type="button" id="stopBtn">Stop</button>` : `
-          ${nums.length ? `<button class="btn" type="button" id="copyAll">Copy ${nums.length} order number${nums.length>1?"s":""}</button>` : ""}
-          ${bad ? `<button class="btn danger" type="button" id="retryBad">Retry failed</button>` : ""}
-          <button class="btn primary" type="button" id="moreBtn">Create more on this PO</button>`}
+        ${live && !done ? `<button class="btn" type="button" data-stop="1">Stop</button>` : `
+          ${nums.length ? `<button class="btn" type="button" data-copyall="${esc(r.id)}">Copy ${nums.length} order number${nums.length>1?"s":""}</button>` : ""}
+          ${live && bad ? `<button class="btn danger" type="button" data-retry="1">Retry failed</button>` : ""}
+          ${live && S.po && S.po.number === r.fields.po_number ? `<button class="btn primary" type="button" data-more="1">Create more on this PO</button>` : ""}`}
       </div>
     </div>`;
-    $("#out").querySelectorAll("[data-copy]").forEach((b) => b.onclick = () => copyText(b.dataset.copy));
-    const sb = $("#stopBtn"); if (sb) sb.onclick = () => { S.stop = true; sb.disabled = true; sb.textContent = "Stopping…"; };
-    const ca = $("#copyAll"); if (ca) ca.onclick = () => copyText(nums.join("\n"));
-    const rb = $("#retryBad"); if (rb) rb.onclick = () => runOrders(r.rows.filter((x) => x.status === "bad").map((x) => x.seq));
-    const mb = $("#moreBtn"); if (mb) mb.onclick = () => openDrawer();
+  }
+  function drawRun(){
+    const out = $("#out");
+    if (!S.runs.length) { out.innerHTML = ""; return; }
+    out.innerHTML = (S.runs.length > 1 ? `<div class="runshead">This session's runs (${S.runs.length}) · newest first</div>` : "") + S.runs.map(runCard).join("");
+    out.querySelectorAll("[data-copy]").forEach((b) => b.onclick = () => copyText(b.dataset.copy));
+    out.querySelectorAll("[data-copyall]").forEach((b) => b.onclick = () => {
+      const r = S.runs.find((x) => x.id === b.dataset.copyall);
+      copyText(r.rows.filter((x) => x.orderNumber).map((x) => x.orderNumber).join("\n"));
+    });
+    const sb = out.querySelector("[data-stop]"); if (sb) sb.onclick = () => { S.stop = true; sb.disabled = true; sb.textContent = "Stopping…"; };
+    const rb = out.querySelector("[data-retry]"); if (rb) rb.onclick = () => { S.run.done = false; runOrders(S.run.rows.filter((x) => x.status === "bad").map((x) => x.seq)); };
+    const mb = out.querySelector("[data-more]"); if (mb) mb.onclick = () => openDrawer();
   }
 
   /* ---------- runs tab ---------- */
