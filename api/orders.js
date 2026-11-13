@@ -46,21 +46,31 @@ export default async function handler(req, res) {
   const v = orderValues(fields, i, n);
   let body; try { body = buildBody(v); } catch (e) { return send(res, 500, { error: "ORDER_BODY_TEMPLATE is not valid JSON: " + e.message }); }
 
-  let out;
+  let out, fallback = false;
   if (dry) {
     out = { ok: true, seq: i, dry: true, orderNumber: null, body };
   } else {
     try {
       const path = createPath().replace(/\{\{purchase_order_id\}\}/g, encodeURIComponent(v.purchase_order_id));
       if (path.includes("purchase-orders//")) throw new Error("This create call needs the purchase order link.");
-      const r = await adminFetch(path, { method: env("ORDER_CREATE_METHOD", "POST"), body, headers: { "idempotency-key": `${runId}-${i}` }, asUser });
+      let r = await adminFetch(path, { method: env("ORDER_CREATE_METHOD", "POST"), body, headers: { "idempotency-key": `${runId}-${i}` }, asUser });
+      // Admin refused this person's own login (e.g. "403 invalid claim"): create it as the service user instead,
+      // with "Created by <name> via ORDER-BOT" in the order note so admin still shows who made it.
+      const svc = env("ADMIN_SESSION_USER_ID");
+      if ((r.status === 401 || r.status === 403) && asUser !== svc && env("FALLBACK_TO_SERVICE_USER", "true") !== "false") {
+        const tag = `Created by ${who} via ORDER-BOT`;
+        const noteKey = env("NOTES_FIELD", "note");
+        const b2 = { ...body, [noteKey]: body[noteKey] ? `${body[noteKey]} · ${tag}` : tag };
+        r = await adminFetch(path, { method: env("ORDER_CREATE_METHOD", "POST"), body: b2, headers: { "idempotency-key": `${runId}-${i}-svc` } });
+        if (r.ok) fallback = true;
+      }
       if (!r.ok) {
         const msg = r.json?.message || r.json?.error || (r.text || "").slice(0, 200) || `Admin returned ${r.status}`;
         out = { ok: false, seq: i, dry: false, error: `${r.status}: ${msg}` };
       } else {
         const num = orderNumberFrom(r.json);
         const oid = r.json && (r.json.orderId || r.json.id);
-        out = { ok: true, seq: i, dry: false, orderNumber: num != null ? String(num) : null, orderId: oid ? String(oid) : null };
+        out = { ok: true, seq: i, dry: false, orderNumber: num != null ? String(num) : null, orderId: oid ? String(oid) : null, fallback };
       }
     } catch (e) {
       out = { ok: false, seq: i, dry: false, error: e.message };

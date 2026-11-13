@@ -1201,7 +1201,7 @@ a.clickme:hover{opacity:.8}
       try {
         const res = await createOne(r, seq);
         row.status = res.ok ? (res.dry ? "dry" : "ok") : "bad";
-        row.orderNumber = res.orderNumber || null; row.orderId = res.orderId || null; row.error = res.ok ? "" : (res.error || "Failed");
+        row.orderNumber = res.orderNumber || null; row.orderId = res.orderId || null; row.fallback = !!res.fallback; row.error = res.ok ? "" : (res.error || "Failed");
         if (res.ok && !res.dry && !res.orderNumber) row.error = "Created, but admin didn't return an order number.";
       } catch (e) { row.status = "bad"; row.error = e.message || "Network error"; }
       drawRun();
@@ -1245,7 +1245,7 @@ a.clickme:hover{opacity:.8}
     const rows = r.rows.map((x) => `<tr><td class="num">${x.seq}</td><td>${x.status === "ok" ? orderLink(x.orderId) : `<span class="dim">—</span>`}</td>
         <td><span class="st ${x.status === "ok" ? "ok" : x.status === "dry" ? "dry" : x.status === "bad" ? "bad" : x.status === "run" ? "run" : ""}">${label[x.status]}</span></td>
         <td>${x.orderNumber ? `<b>${esc(x.orderNumber)}</b><button class="copy" type="button" data-copy="${esc(x.orderNumber)}" aria-label="Copy order ${esc(x.orderNumber)}">⧉</button>` : `<span class="dim">—</span>`}</td>
-        <td>${x.status === "ok" ? esc(r.by || "—") : `<span class="dim">${x.status === "dry" ? "dry run" : "—"}</span>`}</td>
+        <td>${x.status === "ok" ? esc(r.by || "—") + (x.fallback ? ` <span class="dim small" title="Admin refused this person's own login, so it was created by the service account with &quot;Created by ${esc(r.by)} via ORDER-BOT&quot; in the order note">· in note</span>` : "") : `<span class="dim">${x.status === "dry" ? "dry run" : "—"}</span>`}</td>
         <td style="white-space:normal;color:var(--bad)">${esc(x.error || "")}</td></tr>`).join("");
     const title = !done ? `Creating ${finished} of ${r.qty}…` : r.dry ? `Dry run: ${okN} of ${r.qty} checked` : bad ? `${okN} created · ${bad} failed` : `${okN} order${okN===1?"":"s"} created`;
     const at = r.at ? r.at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" }) : "";
