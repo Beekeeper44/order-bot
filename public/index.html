@@ -319,6 +319,33 @@ body{font-size:15px}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cpill,:root:not([data-theme="light"]) .csel.picked{filter:saturate(.9) brightness(.92)}}
 :root[data-theme="dark"] .cpill,:root[data-theme="dark"] .csel.picked{filter:saturate(.9) brightness(.92)}
 
+/* dashboard */
+.dashpill{border:1px solid var(--go);background:var(--go);color:var(--go-ink);border-radius:999px;padding:4px 14px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.dashpill:hover{opacity:.9}
+.dashpill[aria-pressed="true"]{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--go)}
+.dhd{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.dhd h2{margin:0;font-size:24px}
+.range{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.range .chip{font-size:14px;padding:6px 14px}
+.range .chip.on{background:var(--go);border-color:var(--go);color:var(--go-ink)}
+.range input{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;background:var(--bg);color:var(--text)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.tile{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg)}
+.tile .l{font-size:13px;color:var(--dim)} .tile .n{font-size:34px;font-weight:800;line-height:1.1} .tile .s{font-size:12.5px;color:var(--dim)}
+.dgrid{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
+.dgrid h3{margin:0 0 10px;font-size:17px}
+#tab-dash td.num,#tab-dash th.num{text-align:right}
+#tab-dash tr.click{cursor:pointer} #tab-dash tr.click:hover td{background:var(--panel2)} #tab-dash tr.sel td{background:color-mix(in srgb,var(--go) 10%,transparent)}
+.dbar{height:10px;border-radius:5px;background:var(--go);display:inline-block;vertical-align:middle;margin-right:8px}
+.dchart{display:flex;align-items:flex-end;gap:6px;height:170px;padding:22px 2px 0;border-bottom:1px solid var(--line)}
+.dchart .c{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;cursor:pointer}
+.dchart .c b{font-size:12px;margin-bottom:3px} .dchart .c i{width:100%;background:var(--go);border-radius:4px 4px 0 0;min-height:2px}
+.dchart .c.sel i{background:var(--warn)} .dchart .c:hover i{opacity:.8}
+.dxl{display:flex;gap:6px;padding:6px 2px 10px} .dxl span{flex:1;min-width:0;text-align:center;font-size:11.5px;color:var(--dim);overflow:hidden;white-space:nowrap}
+.ddet{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.ddet h3{margin:0 0 8px;font-size:17px}
+@media (max-width:1000px){.tiles{grid-template-columns:repeat(2,1fr)}.dgrid{grid-template-columns:1fr}}
+
 /* users + account */
 .nubox{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px;margin-bottom:14px}
 .nu{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
@@ -455,6 +482,7 @@ a.clickme:hover{opacity:.8}
   <div class="source">
     <div><span class="dim">Orders:</span> <b id="adminName">Arena Club admin</b> <span class="mode" id="modeBadge">DRY RUN</span> <span class="dim small" id="srcNote"></span></div>
     <div class="srcacts">
+      <button class="dashpill" type="button" id="dashBtn" aria-pressed="false">📊 Dashboard</button>
       <button class="btn link" type="button" id="checkBtn">Setup check</button>
       <span class="dim small" id="whoami"></span>
       <button class="btn link" type="button" id="logoutBtn">Sign out</button>
@@ -496,6 +524,28 @@ a.clickme:hover{opacity:.8}
         <button class="btn primary" type="submit">Change password</button>
       </form>
       <div id="pwOut" class="small" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="tab-dash" aria-label="Dashboard" hidden>
+    <div class="panel">
+      <div class="dhd">
+        <h2>Dashboard</h2>
+        <div class="range" id="dRange">
+          <button type="button" class="chip" data-r="today">Today</button>
+          <button type="button" class="chip" data-r="7">Last 7 days</button>
+          <button type="button" class="chip" data-r="30">Last 30 days</button>
+          <button type="button" class="chip" data-r="all">All time</button>
+          <input type="date" id="dFrom" aria-label="From date"><span class="dim">→</span><input type="date" id="dTo" aria-label="To date">
+        </div>
+      </div>
+      <div class="tiles" id="dTiles"></div>
+      <div class="dgrid">
+        <div><h3>By person</h3><div class="tblwrap" id="dPeople"></div></div>
+        <div><h3>Orders by day</h3><div id="dChart"></div><div class="tblwrap" id="dDays"></div></div>
+      </div>
+      <div id="dDetail"></div>
+      <p class="dim small" style="margin:14px 0 0">Live orders created through ORDER-BOT (dry runs and orders made directly in admin aren't counted). Days use your computer's time zone. Click a person or a day to see its orders.</p>
     </div>
   </section>
 
@@ -691,6 +741,7 @@ a.clickme:hover{opacity:.8}
   document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
     document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b ? "true" : "false"));
     ["create","runs","account","users"].forEach((t) => $("#tab-" + t).hidden = b.id !== "tabBtn-" + t);
+    $("#tab-dash").hidden = true; $("#dashBtn").setAttribute("aria-pressed", "false");
     if (b.id === "tabBtn-runs") loadRuns();
     if (b.id === "tabBtn-account") drawAccount();
     if (b.id === "tabBtn-users") loadUsers();
@@ -1284,6 +1335,118 @@ a.clickme:hover{opacity:.8}
       if (!res.ok) { $("#lerr").textContent = j.error || "Couldn't sign in."; return; }
       signedIn(j.me);
     } catch { $("#lerr").textContent = "Couldn't reach ORDER-BOT. Check your connection."; }
+  };
+
+  // ---- Dashboard ----
+  const D = { range: "7", from: null, to: null, rows: [], pick: null };
+  const dayKey = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+  const fromKey = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+  const fmtDay = (k, long) => fromKey(k).toLocaleDateString([], long ? { weekday: "short", month: "short", day: "numeric" } : { weekday: "short", day: "numeric" });
+  const n0 = (v) => Number(v || 0).toLocaleString();
+  function demoDashRows(){
+    if (S.demoDash) return S.demoDash;
+    const people = [["Alex Baumann", 9], ["Alan Bailey", 6], ["Kaity Paul", 4], ["Aaron Adrianne Joaquin", 2], ["Blaise Endico", 2]];
+    const types = ["Grade & Vault (Raw)", "Vault It (Pre-Graded Slab)"], locs = ["500+ BK P1", "1-99 PKMN", "<499 BB P2", "1-99 FB P3", "500+ SPC"];
+    let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    const rows = [];
+    for (let d = 0; d < 40; d++) {
+      const day = new Date(); day.setDate(day.getDate() - d);
+      if (day.getDay() === 0 && rnd() < .8) continue;
+      people.forEach(([who, w]) => {
+        const k = Math.floor(rnd() * w * (d < 7 ? 1.2 : .8));
+        for (let i = 0; i < k; i++) {
+          const t = new Date(day); t.setHours(8 + Math.floor(rnd() * 9), Math.floor(rnd() * 60));
+          const po = String(4600 + Math.floor(rnd() * 90)), qty = [1, 50, 100, 100, 150, 200][Math.floor(rnd() * 6)];
+          rows.push({ who, order_number: String(23300000 + rows.length * 7 + Math.floor(rnd() * 5)), order_id: (crypto.randomUUID ? crypto.randomUUID() : "demo"), created_at: t.toISOString(),
+            po, type: types[Math.floor(rnd() * 2)], qty, cost: Math.round(qty * (2 + rnd() * 40)), loc: `PO ${po} ${locs[Math.floor(rnd() * locs.length)]}` });
+        }
+      });
+    }
+    return (S.demoDash = rows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+  }
+  function setRange(r){
+    D.range = r; D.pick = null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (r === "today") { D.from = dayKey(today); D.to = dayKey(today); }
+    else if (r === "7" || r === "30") { const f = new Date(today); f.setDate(f.getDate() - (Number(r) - 1)); D.from = dayKey(f); D.to = dayKey(today); }
+    else if (r === "all") { D.from = "2020-01-01"; D.to = dayKey(today); }
+    $("#dFrom").value = r === "all" ? "" : D.from; $("#dTo").value = D.to;
+    $("#dRange").querySelectorAll(".chip").forEach((c) => c.classList.toggle("on", c.dataset.r === r));
+    loadDash();
+  }
+  $("#dRange").querySelectorAll(".chip").forEach((c) => c.onclick = () => setRange(c.dataset.r));
+  ["#dFrom", "#dTo"].forEach((id) => $(id).addEventListener("change", () => {
+    if (!$("#dFrom").value || !$("#dTo").value) return;
+    D.range = "custom"; D.pick = null; D.from = $("#dFrom").value; D.to = $("#dTo").value;
+    if (D.from > D.to) [D.from, D.to] = [D.to, D.from];
+    $("#dRange").querySelectorAll(".chip").forEach((c) => c.classList.remove("on"));
+    loadDash();
+  }));
+  async function loadDash(){
+    const start = fromKey(D.from), end = fromKey(D.to); end.setHours(23, 59, 59, 999);
+    $("#dTiles").innerHTML = `<div class="dim small">Loading…</div>`;
+    try {
+      let rows;
+      if (S.demo) rows = demoDashRows().filter((r) => { const t = new Date(r.created_at); return t >= start && t <= end; });
+      else {
+        const res = await fetch(`/api/dashboard?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`, { credentials: "same-origin" });
+        if (res.status === 401) { showLogin(); return; }
+        const j = await res.json(); if (!res.ok) throw new Error(j.error || "Couldn't load");
+        if (j.logging === false) { $("#dTiles").innerHTML = `<div class="dim small">Add DATABASE_URL in Vercel to track orders.</div>`; return; }
+        rows = j.orders;
+      }
+      D.rows = rows; drawDash();
+    } catch (e) { $("#dTiles").innerHTML = `<div class="small" style="color:var(--bad)">${esc(e.message || "Couldn't load the dashboard.")}</div>`; }
+  }
+  function drawDash(){
+    const rows = D.rows;
+    const cards = rows.reduce((t, r) => t + (r.qty || 0), 0), cost = rows.reduce((t, r) => t + (r.cost || 0), 0);
+    const people = {}, days = {};
+    rows.forEach((r) => {
+      const p = people[r.who] = people[r.who] || { who: r.who, orders: 0, cards: 0, cost: 0, last: r.created_at };
+      p.orders++; p.cards += r.qty || 0; p.cost += r.cost || 0; if (r.created_at > p.last) p.last = r.created_at;
+      const k = dayKey(r.created_at), d = days[k] = days[k] || { key: k, orders: 0, cards: 0, by: {} };
+      d.orders++; d.cards += r.qty || 0; d.by[r.who] = (d.by[r.who] || 0) + 1;
+    });
+    const plist = Object.values(people).sort((a, b) => b.orders - a.orders || b.cards - a.cards);
+    $("#dTiles").innerHTML = `
+      <div class="tile"><div class="l">Orders created</div><div class="n">${n0(rows.length)}</div><div class="s">live only · dry runs not counted</div></div>
+      <div class="tile"><div class="l">Total cards</div><div class="n">${n0(cards)}</div><div class="s">sum of Quantity on those orders</div></div>
+      <div class="tile"><div class="l">Purchase cost</div><div class="n">${money(cost).replace(/\.00$/, "")}</div><div class="s">sum of order purchase cost</div></div>
+      <div class="tile"><div class="l">People</div><div class="n">${plist.length}</div><div class="s">created at least 1 order</div></div>`;
+    const maxP = Math.max(1, ...plist.map((p) => p.orders));
+    $("#dPeople").innerHTML = plist.length ? `<table><thead><tr><th>Person</th><th class="num">Orders</th><th class="num">Cards</th><th class="num">Purchase cost</th><th>Last order</th></tr></thead><tbody>${
+      plist.map((p) => `<tr class="click${D.pick && D.pick.who === p.who ? " sel" : ""}" data-who="${esc(p.who)}"><td><b>${esc(p.who)}</b></td><td class="num"><span class="dbar" style="width:${Math.max(4, Math.round(p.orders / maxP * 90))}px"></span>${n0(p.orders)}</td><td class="num">${n0(p.cards)}</td><td class="num">${money(p.cost)}</td><td>${when(p.last)}</td></tr>`).join("")
+    }</tbody></table>` : `<div class="dim small">No orders in this range.</div>`;
+    // chart: every day in range (last 45 if longer)
+    let keys = [];
+    const first = D.range === "all" && rows.length ? dayKey(rows[rows.length - 1].created_at) : D.from;
+    for (let d = fromKey(first); dayKey(d) <= D.to; d.setDate(d.getDate() + 1)) keys.push(dayKey(d));
+    if (keys.length > 45) keys = keys.slice(-45);
+    const maxD = Math.max(1, ...keys.map((k) => (days[k] || {}).orders || 0));
+    $("#dChart").innerHTML = keys.length ? `<div class="dchart">${keys.map((k) => { const v = (days[k] || {}).orders || 0; return `<div class="c${D.pick && D.pick.day === k ? " sel" : ""}" data-day="${k}" title="${esc(fmtDay(k, true))}: ${v} orders">${keys.length <= 20 ? `<b>${v}</b>` : ""}<i style="height:${Math.round(v / maxD * 100)}%"></i></div>`; }).join("")}</div>
+      <div class="dxl">${keys.map((k, i) => `<span>${keys.length <= 14 ? esc(fmtDay(k)) : i % Math.ceil(keys.length / 10) === 0 ? esc(fromKey(k).toLocaleDateString([], { month: "numeric", day: "numeric" })) : ""}</span>`).join("")}</div>` : "";
+    const dlist = Object.values(days).sort((a, b) => b.key.localeCompare(a.key));
+    $("#dDays").innerHTML = dlist.length ? `<table><thead><tr><th>Date</th><th class="num">Orders</th><th class="num">Cards</th><th>Top person</th></tr></thead><tbody>${
+      dlist.map((d) => { const top = Object.entries(d.by).sort((a, b) => b[1] - a[1])[0]; return `<tr class="click${D.pick && D.pick.day === d.key ? " sel" : ""}" data-day="${d.key}"><td>${esc(fmtDay(d.key, true))}</td><td class="num">${n0(d.orders)}</td><td class="num">${n0(d.cards)}</td><td>${esc(top[0])} (${top[1]})</td></tr>`; }).join("")
+    }</tbody></table>` : "";
+    $("#tab-dash").querySelectorAll("[data-who]").forEach((el) => el.onclick = () => { D.pick = D.pick && D.pick.who === el.dataset.who ? null : { who: el.dataset.who }; drawDash(); });
+    $("#tab-dash").querySelectorAll("[data-day]").forEach((el) => el.onclick = () => { D.pick = D.pick && D.pick.day === el.dataset.day ? null : { day: el.dataset.day }; drawDash(); });
+    // detail
+    if (!D.pick) { $("#dDetail").innerHTML = ""; return; }
+    const det = rows.filter((r) => D.pick.who ? r.who === D.pick.who : dayKey(r.created_at) === D.pick.day);
+    const title = D.pick.who ? `${D.pick.who}: ${det.length} order${det.length === 1 ? "" : "s"}` : `${fmtDay(D.pick.day, true)}: ${det.length} order${det.length === 1 ? "" : "s"}`;
+    $("#dDetail").innerHTML = `<div class="ddet"><h3>${esc(title)} · ${n0(det.reduce((t, r) => t + r.qty, 0))} cards <button class="btn link" type="button" id="dClear">close</button></h3><div class="tblwrap"><table><thead><tr><th>Link</th><th>Order</th><th>PO</th><th>Order type</th><th class="num">Quantity</th><th class="num">Purchase cost</th><th>Purchase location</th><th>Created by</th><th>When</th></tr></thead><tbody>${
+      det.slice(0, 500).map((r) => `<tr><td>${orderLink(r.order_id)}</td><td><b>${esc(r.order_number)}</b></td><td>${esc(r.po || "—")}</td><td>${r.type ? typeHtml(typeLabel(r.type), r.type) : "—"}</td><td class="num">${n0(r.qty)}</td><td class="num">${money(r.cost)}</td><td>${esc(r.loc || "—")}</td><td>${esc(r.who)}</td><td>${when(r.created_at)}</td></tr>`).join("")
+    }</tbody></table></div>${det.length > 500 ? `<div class="dim small">Showing the newest 500.</div>` : ""}</div>`;
+    $("#dClear").onclick = () => { D.pick = null; drawDash(); };
+  }
+  $("#dashBtn").onclick = () => {
+    const open = $("#tab-dash").hidden;
+    ["create","runs","account","users"].forEach((t) => $("#tab-" + t).hidden = open ? true : t !== "create");
+    document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", !open && x.id === "tabBtn-create" ? "true" : "false"));
+    $("#tab-dash").hidden = !open; $("#dashBtn").setAttribute("aria-pressed", String(open));
+    if (open) { if (!D.from) setRange("7"); else loadDash(); }
   };
 
   // ---- My account ----

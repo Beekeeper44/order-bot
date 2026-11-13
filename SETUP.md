@@ -66,3 +66,8 @@ Live orders are created with a SuperTokens session for **that person's** admin u
 operation log records who created each order. Unlinked users can't create live orders (dry runs still work).
 Reads (PO lookup, order lists) use the service user ADMIN_SESSION_USER_ID.
 Escape hatch: ALLOW_SERVICE_USER=true lets unlinked users create orders as the service user (not recommended).
+
+## Dashboard
+"📊 Dashboard" pill (next to Setup check): live orders created through ORDER-BOT per person and per day — orders, cards
+(sum of Quantity), purchase cost. Today / 7 / 30 days / all time or a custom date range; click a person or day for its orders.
+Data: GET /api/dashboard?start=&end= from the order_bot_orders log (order_id column added for Click Me links).

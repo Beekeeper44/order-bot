@@ -68,9 +68,9 @@ export default async function handler(req, res) {
   }
 
   if (db) {
-    await db`INSERT INTO order_bot_orders (run_id, seq, qty, who, dry, ok, order_number, error, fields)
-             VALUES (${runId}, ${i}, ${n}, ${who}, ${out.dry}, ${out.ok}, ${out.orderNumber || null}, ${out.error || null}, ${JSON.stringify(v)})
-             ON CONFLICT (run_id, seq) DO UPDATE SET ok=EXCLUDED.ok, order_number=EXCLUDED.order_number, error=EXCLUDED.error, created_at=now()`
+    await db`INSERT INTO order_bot_orders (run_id, seq, qty, who, dry, ok, order_number, order_id, error, fields)
+             VALUES (${runId}, ${i}, ${n}, ${who}, ${out.dry}, ${out.ok}, ${out.orderNumber || null}, ${out.orderId || null}, ${out.error || null}, ${JSON.stringify(v)})
+             ON CONFLICT (run_id, seq) DO UPDATE SET ok=EXCLUDED.ok, order_number=EXCLUDED.order_number, order_id=EXCLUDED.order_id, error=EXCLUDED.error, created_at=now()`
       .catch(() => {});
   }
   send(res, out.ok ? 200 : 502, out);
