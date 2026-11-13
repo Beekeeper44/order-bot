@@ -632,7 +632,7 @@ body{font-size:15px}
   const ORDER_TYPES = [["Vault It (Pre-Graded Slab)", "Pre-graded slabs only — raw cards aren't accepted", "vault_only"], ["Grade & Vault (Raw)", "Raw cards — graded, then vaulted", "grade_and_vault"]];
   const TYPE_COLOR = { "vault it (pre-graded slab)": "purple", "vault_only": "purple", "grade & vault (raw)": "blue", "grade_and_vault": "blue" };
   const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-  const BUCKETS = ["500+", "100-499", "<99"];
+  const BUCKETS = ["500+", "<499", "1-99"];   // same as admin's Bucket list
   // Same list and codes as admin's Category dropdown
   // [code, name, emoji, group, background, text, border] — colors/emojis from admin's Category picker
   const SPORTS = [
@@ -696,16 +696,16 @@ body{font-size:15px}
       details: [["vendor_note", "Card show buy — Portland"], ["purchase_cost", "$12,400.00"]],
       orders: [
         { number: "21246195", status: "Inbound", type: "vault_only", qty: 100, cost: 1, loc: "PO 5115 500+ BB P1" },
-        { number: "21246102", status: "Processing", type: "Grade & Vault (Raw)", qty: 250, cost: 3200, loc: "PO 5115 100-499 BK P2" },
+        { number: "21246102", status: "Processing", type: "Grade & Vault (Raw)", qty: 250, cost: 3200, loc: "PO 5115 <499 BK P2" },
       ] },
     "5116": { id: "4b1f2e9a-7c3d-4e55-9a10-2f8e6d1c0b77", category: "cards", status: "open", createdAt: "2026-11-11T19:40:00Z", amount: 1800,
       details: [["vendor_note", "Pokémon collection, mostly raw"]],
-      orders: [ { number: "21247010", status: "Inbound", type: "Grade & Vault (Raw)", qty: 400, cost: 1800, loc: "PO 5116 <99 PKMN P3" } ] },
+      orders: [ { number: "21247010", status: "Inbound", type: "Grade & Vault (Raw)", qty: 400, cost: 1800, loc: "PO 5116 1-99 PKMN P3" } ] },
     "5120": { id: "e7a90c14-2d6b-4f3e-b8c1-5a0d9e7f3c21", category: "cards", status: "open", createdAt: "2026-11-13T15:05:00Z", amount: 30000,
       details: [["vendor_note", "New PO, no orders yet"]], orders: [] },
   };
   S.demoRuns = [
-    { at: "2026-11-12T22:14:00Z", who: "Alan", dry: false, po: "5115", order_type: "Grade & Vault (Raw)", quantity: "250", location: "PO 5115 100-499 BK P2", ok: 1, qty: 1, failed: 0, orders: ["21246102"] },
+    { at: "2026-11-12T22:14:00Z", who: "Alan", dry: false, po: "5115", order_type: "Grade & Vault (Raw)", quantity: "250", location: "PO 5115 <499 BK P2", ok: 1, qty: 1, failed: 0, orders: ["21246102"] },
   ];
   const demoList = () => Object.keys(DEMO_POS).join(", ");
   async function findPo(num){
@@ -765,7 +765,7 @@ body{font-size:15px}
   }
   function poOrdersTable(list, total){
     if (!list.length) return `<div class="polist"><h4>Orders on this PO</h4><div class="dim small">No orders yet.</div></div>`;
-    const showType = list.some((o) => o.type), showIn = list.some((o) => o.createdAt), showNote = list.some((o) => o.note), showBy = list.some((o) => o.by);
+    const showType = list.some((o) => o.type), showIn = list.some((o) => o.createdAt), showNote = list.some((o) => o.note), showBy = true;
     const head = `Orders on this PO (${total && total > list.length ? `showing ${list.length} of ${total}` : list.length})`;
     return `<div class="polist"><h4>${head}</h4><div class="tblwrap"><table><thead><tr><th>Order</th><th>Status</th>${showType ? "<th>Order type</th>" : ""}<th>Quantity</th><th>Purchase cost</th><th>Purchase location</th>${showNote ? "<th>Notes</th>" : ""}${showBy ? "<th>Created by</th>" : ""}${showIn ? "<th>Inbound</th>" : ""}</tr></thead><tbody>${
       list.map((o) => `<tr class="${o.isNew ? "new" : ""}"><td><b>${esc(o.number ?? "—")}</b></td><td><span class="st">${esc(o.status ? String(o.status).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—")}</span></td>${showType ? `<td>${o.type ? typeHtml(typeLabel(o.type), o.type) : `<span class="dim">—</span>`}</td>` : ""}<td>${esc(o.qty ?? "—")}</td><td>${money(o.cost)}</td><td>${esc(o.loc || "—")}</td>${showNote ? `<td style="white-space:normal">${esc(o.note || "")}</td>` : ""}${showBy ? `<td>${o.by ? esc(o.by) : `<span class="dim">in admin</span>`}</td>` : ""}${showIn ? `<td>${o.createdAt ? esc(new Date(o.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })) : "—"}</td>` : ""}</tr>`).join("")
@@ -877,9 +877,9 @@ body{font-size:15px}
   }
   const sportBy = (c) => SPORTS.find((x) => x[0] === c);
   const pillVars = (x) => `--cbg:${x[4]};--cfg:${x[5]};--cbd:${x[6]}`;
-  // Bucket: "Type or select" like admin — 5 → 500+, 1 → 100-499, < or 9 → <99
+  // Bucket: "Type or select" like admin — 5 → 500+, < or 4 → <499, 1 → 1-99
   let bActive = 0;
-  function bucketFor(q){ q = q.trim(); if (!q) return ""; if (/^5/.test(q)) return "500+"; if (/^1/.test(q)) return "100-499"; if (/^[<9]/.test(q)) return "<99"; return ""; }
+  function bucketFor(q){ q = q.trim(); if (!q) return ""; if (/^5/.test(q)) return "500+"; if (/^[<4]/.test(q)) return "<499"; if (/^1/.test(q)) return "1-99"; return ""; }
   function drawBList(){
     $("#blist").innerHTML = BUCKETS.map((b, i) => `<li role="option" id="bk-${i}" class="${i === bActive ? "active" : ""}" aria-selected="${S.bucket === b}" data-b="${esc(b)}">${esc(b)}</li>`).join("");
     $("#blist").querySelectorAll("li").forEach((li) => { li.onmousedown = (e) => e.preventDefault(); li.onclick = () => pickBucket(li.dataset.b); });

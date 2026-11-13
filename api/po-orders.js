@@ -47,10 +47,10 @@ export default async function handler(req, res) {
     const db = await ensureTables();
     const nums = orders.map((o) => o.number).filter((n) => n != null).map(String);
     if (db && nums.length) {
-      const rows = await db`SELECT DISTINCT ON (order_number) order_number, who FROM order_bot_orders
+      const rows = await db`SELECT DISTINCT ON (order_number) order_number, who, fields->>'order_type' AS order_type FROM order_bot_orders
                             WHERE ok AND NOT dry AND order_number = ANY(${nums}) ORDER BY order_number, created_at DESC`;
-      const by = Object.fromEntries(rows.map((r) => [String(r.order_number), r.who]));
-      orders.forEach((o) => { o.by = by[String(o.number)] || null; });
+      const log = Object.fromEntries(rows.map((r) => [String(r.order_number), r]));
+      orders.forEach((o) => { const l = log[String(o.number)]; o.by = l ? l.who : null; if (!o.type && l && l.order_type) o.type = l.order_type; });
     }
   } catch {}
   const total = j && j.totalCount != null ? Number(j.totalCount) : orders.length;
