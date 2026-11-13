@@ -1,9 +1,13 @@
 // Admins: GET list · POST {action:"add", name, email, role} · POST {action:"update", id, role?, active?, name?}
 //         POST {action:"link", id}  (new invite / password-reset link) · POST {action:"remove", id}
+//         POST {action:"adminlink", id, admin_user_id?, admin_email?}  link to their Arena admin user
+//              (blank id → look it up by admin_email, else by their ORDER-BOT email; "" + clear:true unlinks)
+//         POST {action:"admintest", id}  sign in to admin as them and read one order
 // Everyone: POST {action:"password", current, password}
 import { send, readJson } from "../lib/http.js";
 import { currentUser, makeCookie } from "../lib/auth.js";
-import { listUsers, createUser, newInvite, updateUser, removeUser, userByEmail, userById, setPassword, checkPassword, activeAdmins, cleanEmail, okEmail, okPassword, publicUser } from "../lib/users.js";
+import { findAdminUserId, testAdminUser } from "../lib/admin.js";
+import { listUsers, createUser, newInvite, updateUser, removeUser, setAdminLink, userByEmail, userById, setPassword, checkPassword, activeAdmins, cleanEmail, okEmail, okPassword, publicUser } from "../lib/users.js";
 
 const origin = (req) => `${req.headers["x-forwarded-proto"] || "https"}://${req.headers["x-forwarded-host"] || req.headers.host}`;
 
@@ -28,6 +32,10 @@ export default async function handler(req, res) {
       if (!name || !okEmail(email)) return send(res, 400, { error: "Enter a name and a valid work email." });
       if (await userByEmail(email)) return send(res, 409, { error: "That email already has an account." });
       const id = await createUser({ name, email, role: b.role }, me.name);
+      // link to their Arena admin user: pasted id, else found from email
+      let adminId = String(b.admin_user_id || "").trim();
+      if (!adminId) { try { adminId = (await findAdminUserId(email)) || ""; } catch {} }
+      if (adminId) await setAdminLink(id, adminId, email);
       const token = await newInvite(id);
       return send(res, 200, { ok: true, user: publicUser(await userById(id)), link: `${origin(req)}/?invite=${token}` });
     }
@@ -44,6 +52,23 @@ export default async function handler(req, res) {
       if (losingAdmin && (await activeAdmins()) <= 1) return send(res, 400, { error: "Keep at least one active admin." });
       if (u.id === me.id && active === false) return send(res, 400, { error: "You can't turn yourself off." });
       return send(res, 200, { ok: true, user: publicUser(await updateUser(u.id, { role, active, name: b.name ? String(b.name).trim() : undefined })) });
+    }
+    if (b.action === "adminlink") {
+      const u = await userById(String(b.id || "")); if (!u) return send(res, 404, { error: "No such user." });
+      if (b.clear) return send(res, 200, { ok: true, user: publicUser(await setAdminLink(u.id, null, null)) });
+      const adminEmail = cleanEmail(b.admin_email || u.admin_email || u.email);
+      let adminId = String(b.admin_user_id || "").trim();
+      if (!adminId) adminId = (await findAdminUserId(adminEmail)) || "";
+      if (!adminId) return send(res, 404, { error: `No Arena admin login found for ${adminEmail}. Paste their admin user ID instead.` });
+      if (!/^[\w-]{6,80}$/.test(adminId)) return send(res, 400, { error: "That doesn't look like an admin user ID." });
+      const t = await testAdminUser(adminId);
+      const nu = await setAdminLink(u.id, adminId, b.admin_user_id ? (b.admin_email ? adminEmail : u.admin_email || null) : adminEmail);
+      return send(res, 200, { ok: true, user: publicUser(nu), test: t });
+    }
+    if (b.action === "admintest") {
+      const u = await userById(String(b.id || "")); if (!u) return send(res, 404, { error: "No such user." });
+      if (!u.admin_user_id) return send(res, 400, { error: "Not linked to an admin user yet." });
+      return send(res, 200, { ok: true, test: await testAdminUser(u.admin_user_id) });
     }
     if (b.action === "remove") {
       const u = await userById(String(b.id || "")); if (!u) return send(res, 404, { error: "No such user." });

@@ -34,7 +34,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--mono)}
 body.lock{overflow:hidden}
 button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--go);outline-offset:2px}
-.wrap{max-width:1180px;margin:0 auto;padding:22px 18px 40px}
+.wrap{max-width:min(1760px,96vw);margin:0 auto;padding:22px 24px 40px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 h1{margin:0;font-size:20px;font-weight:800}
 h1 span{color:var(--go)}
@@ -101,7 +101,7 @@ tr.new td{background:color-mix(in srgb,var(--go) 9%,transparent)}
 .summary .sub{color:var(--dim);font-size:12.5px;margin-bottom:10px}
 .tblwrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:12.5px}
-td,th{padding:6px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+td,th{padding:9px 16px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{color:var(--dim);font-weight:500}
 td.num{color:var(--dim)}
 .st{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:0 8px;font-size:11.5px;font-weight:700;color:var(--dim)}
@@ -334,6 +334,12 @@ body{font-size:15px}
 .users .on{color:var(--go);font-weight:700} .users .off{color:var(--bad);font-weight:700} .users .pend{color:var(--warn);font-weight:700}
 .users .acts{display:flex;gap:4px;flex-wrap:wrap}
 .users .rm{color:var(--bad)}
+.users td.adm{white-space:normal;min-width:260px}
+.users .aid{font-size:11.5px;color:var(--dim);word-break:break-all}
+.users .apaste{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.users .apaste input{padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--text);font:inherit;font-size:13px;min-width:180px}
+a.clickme{color:var(--go);font-weight:800;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+a.clickme:hover{opacity:.8}
 .linkbox{margin-top:12px;padding:10px 12px;border:1px solid var(--go);border-radius:9px;background:color-mix(in srgb,var(--go) 8%,var(--panel));display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
 .linkbox code{flex:1;min-width:200px;word-break:break-all;font-size:13px}
 .acct{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:15px}
@@ -494,12 +500,13 @@ body{font-size:15px}
   </section>
 
   <section id="tab-users" role="tabpanel" aria-labelledby="tabBtn-users" hidden>
-    <p class="dim small">Everyone signed in can look up POs and create orders. <b>Admin</b> also gets this Users tab. New people get a one-time link to set their password; <b>reset password</b> makes a new link and signs them out everywhere; <b>turn off</b> blocks them but keeps the account; <b>remove</b> deletes it.</p>
+    <p class="dim small">Every person must be <b>linked</b> to their Arena admin login: live orders are created as that admin user, so admin's operation log shows who made each order. Everyone signed in can look up POs and create orders. <b>Admin</b> also gets this Users tab. New people get a one-time link to set their password; <b>reset password</b> makes a new link and signs them out everywhere; <b>turn off</b> blocks them but keeps the account; <b>remove</b> deletes it.</p>
     <div class="nubox">
       <form class="nu" id="nuForm" autocomplete="off">
         <label>Name<input id="nuName" placeholder="Marisa Lopez" autocomplete="off" data-lpignore="true" data-1p-ignore="true"></label>
         <label>Work email<input id="nuEmail" type="email" placeholder="name@arenaclub.com" autocomplete="off" data-lpignore="true" data-1p-ignore="true"></label>
         <label>Role<select id="nuRole"><option value="member" selected>member — full access</option><option value="admin">admin — full access + Users</option></select></label>
+        <label>Admin user ID (optional)<input id="nuAdmin" placeholder="found from email if blank" autocomplete="off" data-lpignore="true" data-1p-ignore="true"></label>
         <button class="btn primary" type="submit">Add person</button>
       </form>
       <div id="nuOut"></div>
@@ -695,12 +702,12 @@ body{font-size:15px}
     "5115": { id: "c90e4970-81af-4835-b74a-92c9b83f83de", category: "cards", status: "open", createdAt: "2026-11-10T17:12:00Z", amount: 12400,
       details: [["vendor_note", "Card show buy — Portland"], ["purchase_cost", "$12,400.00"]],
       orders: [
-        { number: "21246195", status: "Inbound", type: "vault_only", qty: 100, cost: 1, loc: "PO 5115 500+ BB P1" },
-        { number: "21246102", status: "Processing", type: "Grade & Vault (Raw)", qty: 250, cost: 3200, loc: "PO 5115 <499 BK P2" },
+        { id: "83d3b6d2-3de7-4e06-855c-b80f2a6d658f", number: "21246195", status: "Inbound", type: "vault_only", qty: 100, cost: 1, loc: "PO 5115 500+ BB P1" },
+        { id: "508bbc50-7db3-4bcd-a95c-8e5e8e52756e", number: "21246102", status: "Processing", type: "Grade & Vault (Raw)", qty: 250, cost: 3200, loc: "PO 5115 <499 BK P2" },
       ] },
     "5116": { id: "4b1f2e9a-7c3d-4e55-9a10-2f8e6d1c0b77", category: "cards", status: "open", createdAt: "2026-11-11T19:40:00Z", amount: 1800,
       details: [["vendor_note", "Pokémon collection, mostly raw"]],
-      orders: [ { number: "21247010", status: "Inbound", type: "Grade & Vault (Raw)", qty: 400, cost: 1800, loc: "PO 5116 1-99 PKMN P3" } ] },
+      orders: [ { id: "01f16485-f7a5-4528-95a9-cf8bd7b001ee", number: "21247010", status: "Inbound", type: "Grade & Vault (Raw)", qty: 400, cost: 1800, loc: "PO 5116 1-99 PKMN P3" } ] },
     "5120": { id: "e7a90c14-2d6b-4f3e-b8c1-5a0d9e7f3c21", category: "cards", status: "open", createdAt: "2026-11-13T15:05:00Z", amount: 30000,
       details: [["vendor_note", "New PO, no orders yet"]], orders: [] },
   };
@@ -763,12 +770,15 @@ body{font-size:15px}
       drawPoCard();
     } catch { if (S.po === po) { po.ordersMsg = "Couldn't load orders. Refresh to try again."; drawPoCard(); } }
   }
+  // Link to the order in admin: admin-api.arenaclub.com → admin.arenaclub.com/orders/<order id>
+  function adminWeb(){ const h = (S.cfg && S.cfg.adminHost) || "admin-api.arenaclub.com"; return "https://" + h.replace("admin-api.", "admin."); }
+  const orderLink = (id) => id ? `<a class="clickme" href="${esc(adminWeb() + "/orders/" + encodeURIComponent(id))}" target="_blank" rel="noopener">Click Me</a>` : `<span class="dim">—</span>`;
   function poOrdersTable(list, total){
     if (!list.length) return `<div class="polist"><h4>Orders on this PO</h4><div class="dim small">No orders yet.</div></div>`;
     const showType = list.some((o) => o.type), showIn = list.some((o) => o.createdAt), showNote = list.some((o) => o.note), showBy = true;
     const head = `Orders on this PO (${total && total > list.length ? `showing ${list.length} of ${total}` : list.length})`;
-    return `<div class="polist"><h4>${head}</h4><div class="tblwrap"><table><thead><tr><th>Order</th><th>Status</th>${showType ? "<th>Order type</th>" : ""}<th>Quantity</th><th>Purchase cost</th><th>Purchase location</th>${showNote ? "<th>Notes</th>" : ""}${showBy ? "<th>Created by</th>" : ""}${showIn ? "<th>Inbound</th>" : ""}</tr></thead><tbody>${
-      list.map((o) => `<tr class="${o.isNew ? "new" : ""}"><td><b>${esc(o.number ?? "—")}</b></td><td><span class="st">${esc(o.status ? String(o.status).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—")}</span></td>${showType ? `<td>${o.type ? typeHtml(typeLabel(o.type), o.type) : `<span class="dim">—</span>`}</td>` : ""}<td>${esc(o.qty ?? "—")}</td><td>${money(o.cost)}</td><td>${esc(o.loc || "—")}</td>${showNote ? `<td style="white-space:normal">${esc(o.note || "")}</td>` : ""}${showBy ? `<td>${o.by ? esc(o.by) : `<span class="dim">in admin</span>`}</td>` : ""}${showIn ? `<td>${o.createdAt ? esc(new Date(o.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })) : "—"}</td>` : ""}</tr>`).join("")
+    return `<div class="polist"><h4>${head}</h4><div class="tblwrap"><table><thead><tr><th>Link</th><th>Order</th><th>Status</th>${showType ? "<th>Order type</th>" : ""}<th>Quantity</th><th>Purchase cost</th><th>Purchase location</th>${showNote ? "<th>Notes</th>" : ""}${showBy ? "<th>Created by</th>" : ""}${showIn ? "<th>Inbound</th>" : ""}</tr></thead><tbody>${
+      list.map((o) => `<tr class="${o.isNew ? "new" : ""}"><td>${orderLink(o.id)}</td><td><b>${esc(o.number ?? "—")}</b></td><td><span class="st">${esc(o.status ? String(o.status).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—")}</span></td>${showType ? `<td>${o.type ? typeHtml(typeLabel(o.type), o.type) : `<span class="dim">—</span>`}</td>` : ""}<td>${esc(o.qty ?? "—")}</td><td>${money(o.cost)}</td><td>${esc(o.loc || "—")}</td>${showNote ? `<td style="white-space:normal">${esc(o.note || "")}</td>` : ""}${showBy ? `<td>${o.by ? esc(o.by) : `<span class="dim">in admin</span>`}</td>` : ""}${showIn ? `<td>${o.createdAt ? esc(new Date(o.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })) : "—"}</td>` : ""}</tr>`).join("")
     }</tbody></table></div></div>`;
   }
   // Total cost under the PO ID, plus how much of it the PO's orders already use
@@ -1140,7 +1150,7 @@ body{font-size:15px}
       try {
         const res = await createOne(r, seq);
         row.status = res.ok ? (res.dry ? "dry" : "ok") : "bad";
-        row.orderNumber = res.orderNumber || null; row.error = res.ok ? "" : (res.error || "Failed");
+        row.orderNumber = res.orderNumber || null; row.orderId = res.orderId || null; row.error = res.ok ? "" : (res.error || "Failed");
         if (res.ok && !res.dry && !res.orderNumber) row.error = "Created, but admin didn't return an order number.";
       } catch (e) { row.status = "bad"; row.error = e.message || "Network error"; }
       drawRun();
@@ -1151,7 +1161,7 @@ body{font-size:15px}
       const d = DEMO_POS[r.fields.po_number];
       if (d && made.length) {
         d.orders.forEach((o) => o.isNew = false);
-        made.forEach((x) => d.orders.unshift({ number: x.orderNumber, status: "Inbound", by: r.by || "demo", type: r.fields.order_type, qty: +r.fields.quantity, cost: +r.fields.purchase_cost, loc: r.fields.purchase_location, isNew: true }));
+        made.forEach((x) => d.orders.unshift({ id: x.orderId, number: x.orderNumber, status: "Inbound", by: r.by || "demo", type: r.fields.order_type, qty: +r.fields.quantity, cost: +r.fields.purchase_cost, loc: r.fields.purchase_location, isNew: true }));
       }
       S.demoRuns.unshift({ at: new Date().toISOString(), who: "demo", dry: r.dry, po: r.fields.po_number, order_type: r.fields.order_type, quantity: r.fields.quantity, location: r.fields.purchase_location,
         ok: r.rows.filter((x) => x.status === "ok" || x.status === "dry").length, qty: r.qty, failed: r.rows.filter((x) => x.status === "bad").length, orders: made.map((x) => x.orderNumber) });
@@ -1163,7 +1173,7 @@ body{font-size:15px}
   async function createOne(r, seq){
     if (S.demo) {
       await new Promise((ok) => setTimeout(ok, 180 + Math.random() * 220));
-      return { ok: true, dry: r.dry, orderNumber: r.dry ? null : String(21247100 + Math.floor(Math.random() * 8999)) };
+      return { ok: true, dry: r.dry, orderNumber: r.dry ? null : String(21247100 + Math.floor(Math.random() * 8999)), orderId: r.dry ? null : (crypto.randomUUID ? crypto.randomUUID() : "demo-" + Date.now()) };
     }
     const res = await fetch("/api/orders", { method: "POST", headers: { "content-type": "application/json" }, credentials: "same-origin",
       body: JSON.stringify({ runId: r.id, seq, qty: r.qty, fields: r.fields, dryRun: r.dry }) });
@@ -1181,7 +1191,7 @@ body{font-size:15px}
     const nums = r.rows.filter((x) => x.orderNumber).map((x) => x.orderNumber);
     const live = r === S.run, done = !!r.done;
     const label = { wait: "Waiting", run: "Creating", ok: "Created", dry: "Dry run", bad: "Failed" };
-    const rows = r.rows.map((x) => `<tr><td class="num">${x.seq}</td>
+    const rows = r.rows.map((x) => `<tr><td class="num">${x.seq}</td><td>${x.status === "ok" ? orderLink(x.orderId) : `<span class="dim">—</span>`}</td>
         <td><span class="st ${x.status === "ok" ? "ok" : x.status === "dry" ? "dry" : x.status === "bad" ? "bad" : x.status === "run" ? "run" : ""}">${label[x.status]}</span></td>
         <td>${x.orderNumber ? `<b>${esc(x.orderNumber)}</b><button class="copy" type="button" data-copy="${esc(x.orderNumber)}" aria-label="Copy order ${esc(x.orderNumber)}">⧉</button>` : `<span class="dim">—</span>`}</td>
         <td>${x.status === "ok" ? esc(r.by || "—") : `<span class="dim">${x.status === "dry" ? "dry run" : "—"}</span>`}</td>
@@ -1192,7 +1202,7 @@ body{font-size:15px}
       <h3>${title} <span class="when">${esc(at)}${r.by ? " · " + esc(r.by) : ""}</span></h3>
       <div class="sub">PO #${esc(r.fields.po_number)} · ${esc(r.fields.order_type)} · ${esc(r.fields.quantity)} ${unit()} each · ${money(r.fields.purchase_cost)} each · ${esc(r.fields.purchase_location)}${r.fields.notes ? " · note: " + esc(r.fields.notes) : ""}</div>
       ${done ? "" : `<div class="prog" aria-hidden="true"><i style="width:${Math.round(finished / r.qty * 100)}%"></i></div>`}
-      <div class="tblwrap"><table><thead><tr><th>#</th><th>Status</th><th>Order number</th><th>Created by</th><th>Error</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="tblwrap"><table><thead><tr><th>#</th><th>Link</th><th>Status</th><th>Order number</th><th>Created by</th><th>Error</th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="ract">
         ${live && !done ? `<button class="btn" type="button" data-stop="1">Stop</button>` : `
           ${nums.length ? `<button class="btn" type="button" data-copyall="${esc(r.id)}">Copy ${nums.length} order number${nums.length>1?"s":""}</button>` : ""}
@@ -1250,7 +1260,10 @@ body{font-size:15px}
     setTimeout(() => (mode === "setup" ? $("#lname") : mode === "invite" ? $("#lpass") : $("#lemail")).focus(), 30);
   }
   function signedIn(me){
-    S.me = me; $("#login").hidden = true; $("#lpass").value = ""; $("#lpass2").value = "";
+    S.me = me; $("#login").hidden = true;
+    if (!S.demo && !me.admin_user_id && !(S.cfg && S.cfg.allowServiceUser)) {
+      $("#srcNote").innerHTML = `<span style="color:var(--bad);font-weight:700">Your admin login isn't linked, so live orders are blocked. Ask an ORDER-BOT admin to link you in Users.</span>`;
+    } $("#lpass").value = ""; $("#lpass2").value = "";
     $("#whoami").textContent = me.name; $("#tabBtn-users").hidden = me.role !== "admin";
     if (INVITE) { INVITE = ""; history.replaceState(null, "", location.pathname + location.hash); }
     $("#poNum").focus();
@@ -1276,7 +1289,8 @@ body{font-size:15px}
   // ---- My account ----
   function drawAccount(){
     const me = S.me || { name: "demo", email: "demo@arenaclub.com", role: "admin" };
-    $("#acctInfo").innerHTML = `<span>Name</span><b>${esc(me.name)}</b><span>Email</span><b>${esc(me.email)}</b><span>Role</span><b>${esc(me.role)}</b>`;
+    $("#acctInfo").innerHTML = `<span>Name</span><b>${esc(me.name)}</b><span>Email</span><b>${esc(me.email)}</b><span>Role</span><b>${esc(me.role)}</b>
+      <span>Admin login</span><b>${S.demo ? "linked (demo)" : me.admin_user_id ? `linked · ${esc(me.admin_email || "")} · ${esc(me.admin_user_id)}` : `<span style="color:var(--bad)">not linked: ask an ORDER-BOT admin to link you in Users</span>`}</b>`;
   }
   $("#pwForm").onsubmit = async (e) => {
     e.preventDefault(); const out = $("#pwOut");
@@ -1292,8 +1306,8 @@ body{font-size:15px}
   // ---- Users (admins) ----
   S.users = []; S.usort = { key: "role", dir: 1 };
   S.demoUsers = [
-    { id: "u1", name: "Alan Bailey", email: "alan@arenaclub.com", role: "admin", active: true, has_password: true, invite_pending: false, last_sign_in: new Date().toISOString() },
-    { id: "u2", name: "Kaity Paul", email: "kaity.paul@arenaclub.com", role: "admin", active: true, has_password: true, invite_pending: false, last_sign_in: "2026-11-12T18:08:00Z" },
+    { id: "u1", name: "Alan Bailey", email: "alan@arenaclub.com", role: "admin", admin_user_id: "2290bf05-5cae-4a26-89a8-1c1360166c7f", admin_email: "alan@arenaclub.com", active: true, has_password: true, invite_pending: false, last_sign_in: new Date().toISOString() },
+    { id: "u2", name: "Kaity Paul", email: "kaity.paul@arenaclub.com", role: "admin", admin_user_id: "7b1c2d3e-4f50-4a6b-9c8d-0e1f2a3b4c5d", admin_email: "kaity.paul@arenaclub.com", active: true, has_password: true, invite_pending: false, last_sign_in: "2026-11-12T18:08:00Z" },
     { id: "u3", name: "Aaron Adrianne Joaquin", email: "ajoaquin@precisionlabeling.com", role: "member", active: true, has_password: true, invite_pending: false, last_sign_in: "2026-11-13T06:59:00Z" },
     { id: "u4", name: "Blaise Endico", email: "blaise@precisionlabeling.com", role: "member", active: true, has_password: false, invite_pending: true, last_sign_in: null },
   ];
@@ -1310,11 +1324,17 @@ body{font-size:15px}
     if (!b) return { users: U.map((u) => ({ ...u })), me: "u1" };
     if (b.action === "add") {
       if (U.some((u) => u.email === b.email.trim().toLowerCase())) throw new Error("That email already has an account.");
-      const u = { id: "u" + (U.length + 1), name: b.name.trim(), email: b.email.trim().toLowerCase(), role: b.role, active: true, has_password: false, invite_pending: true, last_sign_in: null };
+      const u = { id: "u" + (U.length + 1), name: b.name.trim(), email: b.email.trim().toLowerCase(), role: b.role, active: true, has_password: false, invite_pending: true, last_sign_in: null, admin_user_id: b.admin_user_id || null, admin_email: b.admin_user_id ? b.email.trim().toLowerCase() : null };
       U.push(u); return { user: u, link: link() };
     }
     const u = U.find((x) => x.id === b.id);
     if (b.action === "link") { u.invite_pending = true; return { link: link() }; }
+    if (b.action === "adminlink") {
+      if (b.clear) { u.admin_user_id = null; u.admin_email = null; return { user: u }; }
+      u.admin_user_id = b.admin_user_id || (crypto.randomUUID ? crypto.randomUUID() : "demo-admin-id"); u.admin_email = b.admin_email || u.email;
+      return { user: u, test: { ok: true, note: "Signed in to admin as this user (demo)" } };
+    }
+    if (b.action === "admintest") return { test: { ok: true, note: "Signed in to admin as this user (demo)" } };
     if (b.action === "remove") { if (u.id === "u1") throw new Error("You can't remove yourself."); U.splice(U.indexOf(u), 1); return { ok: true }; }
     if (b.action === "update") {
       if (u.id === "u1" && b.active === false) throw new Error("You can't turn yourself off.");
@@ -1330,14 +1350,20 @@ body{font-size:15px}
   const statusOf = (u) => !u.active ? "off" : u.invite_pending && !u.has_password ? "invited" : "active";
   function drawUsers(){
     const k = S.usort.key, d = S.usort.dir;
-    const val = (u) => k === "user" ? u.name.toLowerCase() : k === "role" ? (u.role === "admin" ? 0 : 1) : k === "status" ? statusOf(u) : k === "last" ? (u.last_sign_in ? -new Date(u.last_sign_in) : 0) : "";
+    const val = (u) => k === "admin" ? (u.admin_user_id ? 0 : 1) : k === "user" ? u.name.toLowerCase() : k === "role" ? (u.role === "admin" ? 0 : 1) : k === "status" ? statusOf(u) : k === "last" ? (u.last_sign_in ? -new Date(u.last_sign_in) : 0) : "";
     const list = [...S.users].sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : a.name.localeCompare(b.name)) * d);
     const th = (key, label) => `<th data-k="${key}" aria-sort="${k === key ? (d > 0 ? "ascending" : "descending") : "none"}">${label}</th>`;
-    $("#usersTbl").innerHTML = `<table><thead><tr>${th("user", "User")}${th("role", "role")}${th("status", "status")}${th("last", "last sign-in")}<th></th></tr></thead><tbody>${
+    $("#usersTbl").innerHTML = `<table><thead><tr>${th("user", "User")}${th("role", "role")}${th("admin", "admin login")}${th("status", "status")}${th("last", "last sign-in")}<th></th></tr></thead><tbody>${
       list.map((u) => {
         const st = statusOf(u), me = u.id === S.meId;
         return `<tr><td><b>${esc(u.name)}</b><div class="em">${esc(u.email)}</div></td>
           <td><select data-role="${esc(u.id)}" aria-label="Role for ${esc(u.name)}"><option value="admin"${u.role === "admin" ? " selected" : ""}>admin</option><option value="member"${u.role === "member" ? " selected" : ""}>member</option></select></td>
+          <td class="adm">${u.admin_user_id
+              ? `<span class="on">linked</span> <span class="em">${esc(u.admin_email || "")}</span><div class="aid" title="Arena admin user ID">${esc(u.admin_user_id)}</div>`
+              : `<span class="pend">not linked</span>`}
+            <div class="acts"><button class="btn link" type="button" data-alink="${esc(u.id)}">link by admin email</button>${u.admin_user_id ? `<button class="btn link" type="button" data-atest="${esc(u.id)}">test</button>` : ""}<button class="btn link" type="button" data-apaste="${esc(u.id)}">paste ID</button>${u.admin_user_id ? `<button class="btn link rm" type="button" data-aclear="${esc(u.id)}">unlink</button>` : ""}</div>
+            <div class="apaste" data-apbox="${esc(u.id)}" hidden><input placeholder="Arena admin user ID" data-apin="${esc(u.id)}" autocomplete="off" data-lpignore="true" data-1p-ignore="true"><input placeholder="admin email (optional)" data-apem="${esc(u.id)}" autocomplete="off" data-lpignore="true" data-1p-ignore="true"><button class="btn" type="button" data-apsave="${esc(u.id)}">Save</button></div>
+            <div class="small" data-amsg="${esc(u.id)}"></div></td>
           <td><span class="${st === "active" ? "on" : st === "off" ? "off" : "pend"}">${st === "invited" ? "invite sent" : st}</span></td>
           <td>${when(u.last_sign_in)}</td>
           <td><div class="acts">${me ? `<span class="dim small">you</span>` : `<button class="btn link" type="button" data-link="${esc(u.id)}">${u.has_password ? "reset password" : "new invite link"}</button><button class="btn link" type="button" data-active="${esc(u.id)}" data-to="${!u.active}">${u.active ? "turn off" : "turn on"}</button><button class="btn link rm" type="button" data-remove="${esc(u.id)}">remove</button>`}</div></td></tr>`;
@@ -1348,6 +1374,29 @@ body{font-size:15px}
     });
     $("#usersTbl").querySelectorAll("[data-active]").forEach((b) => b.onclick = async () => {
       try { await usersApi({ action: "update", id: b.dataset.active, active: b.dataset.to === "true" }); toast(b.dataset.to === "true" ? "Turned on" : "Turned off"); loadUsers(); } catch (e) { toast(e.message); }
+    });
+    const amsg = (id, t, ok) => { const el = $("#usersTbl").querySelector(`[data-amsg="${id}"]`); if (el) { el.textContent = t; el.style.color = ok ? "var(--go)" : "var(--bad)"; } };
+    $("#usersTbl").querySelectorAll("[data-alink]").forEach((b) => b.onclick = async () => {
+      const id = b.dataset.alink; b.disabled = true; b.textContent = "looking up…";
+      try { const j = await usersApi({ action: "adminlink", id }); toast("Linked"); await loadUsers(); if (j.test) amsg(id, (j.test.ok ? "✅ " : "❌ ") + j.test.note, j.test.ok); }
+      catch (e) { b.disabled = false; b.textContent = "link by admin email"; amsg(id, e.message, false); }
+    });
+    $("#usersTbl").querySelectorAll("[data-atest]").forEach((b) => b.onclick = async () => {
+      const id = b.dataset.atest; b.disabled = true; b.textContent = "testing…";
+      try { const j = await usersApi({ action: "admintest", id }); amsg(id, (j.test.ok ? "✅ " : "❌ ") + j.test.note, j.test.ok); }
+      catch (e) { amsg(id, e.message, false); }
+      b.disabled = false; b.textContent = "test";
+    });
+    $("#usersTbl").querySelectorAll("[data-apaste]").forEach((b) => b.onclick = () => { const box = $("#usersTbl").querySelector(`[data-apbox="${b.dataset.apaste}"]`); box.hidden = !box.hidden; if (!box.hidden) box.querySelector("input").focus(); });
+    $("#usersTbl").querySelectorAll("[data-apsave]").forEach((b) => b.onclick = async () => {
+      const id = b.dataset.apsave, v = $("#usersTbl").querySelector(`[data-apin="${id}"]`).value.trim(), em = $("#usersTbl").querySelector(`[data-apem="${id}"]`).value.trim();
+      if (!v) { amsg(id, "Paste their admin user ID first.", false); return; }
+      try { const j = await usersApi({ action: "adminlink", id, admin_user_id: v, admin_email: em }); toast("Linked"); await loadUsers(); if (j.test) amsg(id, (j.test.ok ? "✅ " : "❌ ") + j.test.note, j.test.ok); }
+      catch (e) { amsg(id, e.message, false); }
+    });
+    $("#usersTbl").querySelectorAll("[data-aclear]").forEach((b) => b.onclick = async () => {
+      if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "click again to unlink"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "unlink"; }, 5000); return; }
+      try { await usersApi({ action: "adminlink", id: b.dataset.aclear, clear: true }); toast("Unlinked"); loadUsers(); } catch (e) { toast(e.message); }
     });
     $("#usersTbl").querySelectorAll("[data-remove]").forEach((b) => b.onclick = async () => {
       const u = S.users.find((x) => x.id === b.dataset.remove);
@@ -1375,8 +1424,10 @@ body{font-size:15px}
     const name = $("#nuName").value.trim(), email = $("#nuEmail").value.trim();
     if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $("#nuOut").innerHTML = `<div class="small" style="color:var(--bad);margin-top:8px">Enter a name and a valid work email.</div>`; return; }
     try {
-      const j = await usersApi({ action: "add", name, email, role: $("#nuRole").value });
-      showLink(j.link, name, false); $("#nuName").value = ""; $("#nuEmail").value = ""; loadUsers();
+      const j = await usersApi({ action: "add", name, email, role: $("#nuRole").value, admin_user_id: $("#nuAdmin").value.trim() });
+      showLink(j.link, name, false);
+      if (j.user && !j.user.admin_user_id) $("#nuOut").insertAdjacentHTML("beforeend", `<div class="small" style="color:var(--warn);margin-top:6px">No Arena admin login found for ${esc(email)}. Use <b>link by admin email</b> or <b>paste ID</b> in their row, or they can't create live orders.</div>`);
+      $("#nuName").value = ""; $("#nuEmail").value = ""; $("#nuAdmin").value = ""; loadUsers();
     } catch (err) { $("#nuOut").innerHTML = `<div class="small" style="color:var(--bad);margin-top:8px">${esc(err.message)}</div>`; }
   };
 

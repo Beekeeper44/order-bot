@@ -59,3 +59,10 @@ The PO card lists the PO's orders from admin itself: `GET {ADMIN_API_BASE}/admin
 Native SQL, database APP_PROD (397), one variable `po_number` (type Number). Save it and set PO_QUESTION_ID.
 See the query in the chat / adjust column names after running `SELECT * FROM APP_PROD.ADMIN.PURCHASE_ORDERS LIMIT 5`.
 Without PO_QUESTION_ID, ORDER-BOT queries APP_PROD.ADMIN.PURCHASE_ORDERS directly (column NUMBER or PO_NUMBER, or PO_NUMBER_COLUMN).
+
+## Who created the order (admin operation log)
+Each ORDER-BOT user is linked to their Arena admin login (Users → admin login: link by admin email / paste ID / test).
+Live orders are created with a SuperTokens session for **that person's** admin user id, so admin's own
+operation log records who created each order. Unlinked users can't create live orders (dry runs still work).
+Reads (PO lookup, order lists) use the service user ADMIN_SESSION_USER_ID.
+Escape hatch: ALLOW_SERVICE_USER=true lets unlinked users create orders as the service user (not recommended).

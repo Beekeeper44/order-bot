@@ -27,6 +27,9 @@ export default async function handler(req, res) {
   if (!String(fields.po_number || "").trim()) return send(res, 400, { error: "PO number is required." });
 
   const dry = isDryRun() || b.dryRun !== false;
+  // Live orders are created as the signed-in person's own Arena admin user, so admin's operation log shows who made them.
+  const asUser = me.admin_user_id || (env("ALLOW_SERVICE_USER") === "true" ? env("ADMIN_SESSION_USER_ID") : "");
+  if (!dry && !asUser) return send(res, 409, { error: "Your ORDER-BOT account isn't linked to your Arena admin login yet. Ask an ORDER-BOT admin to link it in Users (admin login → link by admin email)." });
   if (!dry && !createReady()) return send(res, 409, { error: "Live create isn't set up yet (ORDER_CREATE_PATH is empty). Use Dry run." });
   if (!dry) {
     const t = findOrderType(fields.order_type);
@@ -50,13 +53,14 @@ export default async function handler(req, res) {
     try {
       const path = createPath().replace(/\{\{purchase_order_id\}\}/g, encodeURIComponent(v.purchase_order_id));
       if (path.includes("purchase-orders//")) throw new Error("This create call needs the purchase order link.");
-      const r = await adminFetch(path, { method: env("ORDER_CREATE_METHOD", "POST"), body, headers: { "idempotency-key": `${runId}-${i}` } });
+      const r = await adminFetch(path, { method: env("ORDER_CREATE_METHOD", "POST"), body, headers: { "idempotency-key": `${runId}-${i}` }, asUser });
       if (!r.ok) {
         const msg = r.json?.message || r.json?.error || (r.text || "").slice(0, 200) || `Admin returned ${r.status}`;
         out = { ok: false, seq: i, dry: false, error: `${r.status}: ${msg}` };
       } else {
         const num = orderNumberFrom(r.json);
-        out = { ok: true, seq: i, dry: false, orderNumber: num != null ? String(num) : null };
+        const oid = r.json && (r.json.orderId || r.json.id);
+        out = { ok: true, seq: i, dry: false, orderNumber: num != null ? String(num) : null, orderId: oid ? String(oid) : null };
       }
     } catch (e) {
       out = { ok: false, seq: i, dry: false, error: e.message };

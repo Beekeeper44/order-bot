@@ -10,7 +10,8 @@ export default async function handler(req, res) {
   try { needsSetup = (await countUsers()) === 0; } catch {}
   send(res, 200, {
     who: me ? me.name : null,
-    me: me ? { id: me.id, name: me.name, email: me.email, role: me.role } : null,
+    me: me ? { id: me.id, name: me.name, email: me.email, role: me.role, admin_user_id: me.admin_user_id || null, admin_email: me.admin_email || null } : null,
+    allowServiceUser: env("ALLOW_SERVICE_USER") === "true",
     needsSetup,
     dryRunForced: isDryRun(),
     createReady: createReady(),

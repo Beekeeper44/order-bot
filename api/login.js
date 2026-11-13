@@ -8,7 +8,7 @@ import { env } from "../lib/env.js";
 import { makeCookie, clearCookie } from "../lib/auth.js";
 import { userByEmail, checkPassword, touchSignIn, countUsers, createUser, userById, userByInvite, setPassword, cleanEmail, okEmail, okPassword } from "../lib/users.js";
 
-const me = (u) => ({ id: u.id, name: u.name, email: u.email, role: u.role });
+const me = (u) => ({ id: u.id, name: u.name, email: u.email, role: u.role, admin_user_id: u.admin_user_id || null, admin_email: u.admin_email || null });
 
 export default async function handler(req, res) {
   try {
@@ -28,6 +28,8 @@ export default async function handler(req, res) {
       if (!String(b.name || "").trim() || !okEmail(email)) return send(res, 400, { error: "Enter your name and work email." });
       if (!okPassword(b.password)) return send(res, 400, { error: "Password must be at least 10 characters." });
       const id = await createUser({ name: b.name, email, role: "admin", password: b.password });
+      try { const { findAdminUserId } = await import("../lib/admin.js"); const { setAdminLink } = await import("../lib/users.js");
+            const aid = await findAdminUserId(email); if (aid) await setAdminLink(id, aid, email); } catch {}
       const u = await userById(id); await touchSignIn(id);
       res.setHeader("set-cookie", makeCookie(u)); return send(res, 200, { ok: true, me: me(u) });
     }
